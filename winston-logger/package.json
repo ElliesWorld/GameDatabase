@@ -2,12 +2,11 @@
   "name": "winston-logger",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/server.ts",
+    "dev": "nodemon src/index.js",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/index.js",
     "seed": "tsx prisma/seed.ts"
   },
   "keywords": [],
@@ -36,6 +35,8 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "multer": "^2.0.2",
+    "winston": "^3.18.3",
+    "winston-daily-rotate-file": "^5.0.0",
     "zod": "^4.1.12"
   }
 }
