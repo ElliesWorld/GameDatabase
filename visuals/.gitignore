@@ -36,3 +36,4 @@ build/
 
 # Uploads (user uploaded files)
 uploads/
+visuals/.vite/
