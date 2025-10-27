@@ -1,15 +1,50 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
+}
+
+// User model - stores registered users
+model User {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  email          String        @unique
+  firstName      String
+  lastName       String
+  nickname       String        @unique
+  profilePicture String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  gameSessions   GameSession[]
+
+  @@map("users")
+}
+
+// Game model - the 4 games 
+model Game {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  name         String        @unique
+  imageUrl     String
+  createdAt    DateTime      @default(now())
+  
+  gameSessions GameSession[]
+
+  @@map("games")
+}
+
+// GameSession model - tracks playtime
+model GameSession {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  gameId    String   @db.ObjectId
+  duration  Int      // in seconds (1 second = 1 minute in display)
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: NoAction)
+  game Game @relation(fields: [gameId], references: [id], onDelete: NoAction)
+
+  @@map("game_sessions")
 }
