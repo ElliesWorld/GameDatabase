@@ -36,4 +36,6 @@ build/
 
 # Uploads (user uploaded files)
 uploads/
-visuals/.vite/
+
+# Vite cache (relative path - we're already in visuals/)
+.vite/
