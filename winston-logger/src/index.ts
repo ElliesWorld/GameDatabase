@@ -3,6 +3,7 @@ import cors from "cors";
 import weatherRoutes from "./weather.js";
 import userRoutes from "./user.js";
 import gameRoutes from "./game.js";
+import sessionRoutes from "./session.js"; 
 import dotenv from "dotenv";
 import logger, { requestLogger } from "./logger.js";
 
@@ -23,6 +24,7 @@ app.use(requestLogger);
 app.use("/api/weather", weatherRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/games", gameRoutes);
+app.use("/api/sessions", sessionRoutes); 
 
 app.use((req, res) => {
   logger.warn(`404 - Route not found: ${req.method} ${req.url}`);

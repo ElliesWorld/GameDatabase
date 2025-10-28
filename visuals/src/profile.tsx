@@ -30,14 +30,6 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Define the 4 games
-  const games = [
-    { name: 'Snowball Showdown', icon: '❄️' },
-    { name: 'Bear Panic', icon: '🐻' },
-    { name: 'Meteor Mayhem', icon: '☄️' },
-    { name: 'Tarzan Rumble', icon: '🌴' }
-  ];
-
   useEffect(() => {
     // Fetch user profile with statistics
     api.get(`/users/${userId}`)
@@ -257,13 +249,19 @@ function Profile() {
               
               {/* Game Progress Bars with Minutes */}
               <div style={{ marginBottom: '40px' }}>
-                {games.map(game => {
-                  const stat = user.statistics?.gameStats?.[game.name];
-                  const minutes = stat?.minutes || 0;
-                  const percentage = stat?.percentage || 0;
+                {user.statistics?.gameStats && Object.entries(user.statistics.gameStats).map(([gameName, stat]) => {
+                  // Get icon based on game name
+                  let icon = '🎮';
+                  if (gameName.includes('Snowball')) icon = '❄️';
+                  if (gameName.includes('Bear')) icon = '🐻';
+                  if (gameName.includes('Meteor')) icon = '☄️';
+                  if (gameName.includes('Tarzan')) icon = '🌴';
+
+                  const minutes = stat.minutes || 0;
+                  const percentage = stat.percentage || 0;
                   
                   return (
-                    <div key={game.name} style={{ marginBottom: '25px' }}>
+                    <div key={gameName} style={{ marginBottom: '25px' }}>
                       <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -273,9 +271,13 @@ function Profile() {
                         <span style={{ 
                           fontWeight: 'bold',
                           fontSize: '1.2rem',
-                          color: '#333'
+                          color: '#333',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px'
                         }}>
-                          {game.name}
+                          <span style={{ fontSize: '1.5rem' }}>{icon}</span>
+                          {gameName}
                         </span>
                         <span style={{ 
                           fontSize: '1.2rem',
@@ -338,12 +340,18 @@ function Profile() {
                 gap: '20px',
                 marginBottom: '40px'
               }}>
-                {games.map(game => {
-                  const stat = user.statistics?.gameStats?.[game.name];
-                  const percentage = stat?.percentage || 0;
+                {user.statistics?.gameStats && Object.entries(user.statistics.gameStats).map(([gameName, stat]) => {
+                  // Get icon based on game name
+                  let icon = '🎮';
+                  if (gameName.includes('Snowball')) icon = '❄️';
+                  if (gameName.includes('Bear')) icon = '🐻';
+                  if (gameName.includes('Meteor')) icon = '☄️';
+                  if (gameName.includes('Tarzan')) icon = '🌴';
+
+                  const percentage = stat.percentage || 0;
                   
                   return (
-                    <div key={game.name} style={{
+                    <div key={gameName} style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '20px',
@@ -356,7 +364,7 @@ function Profile() {
                     onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
                     onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                     >
-                      <span style={{ fontSize: '3.5rem' }}>{game.icon}</span>
+                      <span style={{ fontSize: '3.5rem' }}>{icon}</span>
                       <div style={{ flex: 1 }}>
                         <div style={{ 
                           fontWeight: 'bold',
@@ -364,7 +372,7 @@ function Profile() {
                           color: '#333',
                           marginBottom: '5px'
                         }}>
-                          {game.name}
+                          {gameName}
                         </div>
                       </div>
                       <div style={{

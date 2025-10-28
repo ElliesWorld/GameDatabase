@@ -64,10 +64,19 @@ function GameSelection() {
       });
   }, [userId]);
 
-  const handleGameSelect = (gameId: string, gameName: string) => {
-    // In the next step there will be a game play page
-    alert(`Starting ${gameName}! Game timer page coming next...`);
-  };
+const handleGameSelect = (gameId: string, gameName: string) => {
+  // Get game icon
+  let gameIcon = '🎮';
+  if (gameName.includes('Snowball')) gameIcon = '⛄';
+  if (gameName.includes('Bear')) gameIcon = '🐻';
+  if (gameName.includes('Meteor')) gameIcon = '☄️';
+  if (gameName.includes('Tarzan')) gameIcon = '🦍';
+  
+  // Navigate to play page with game info
+  navigate(`/play/${userId}/${gameId}`, {
+    state: { gameName, gameIcon }
+  });
+};
 
   if (loading) {
     return (

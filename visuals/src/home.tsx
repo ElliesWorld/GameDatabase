@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import Profile from './profile';
 import User from './user';
 import GameSelection from './game';
+import Play from './play';  // ← ADD THIS IMPORT
 import api from './services/api';
 
 interface User {
@@ -192,6 +193,7 @@ function Home() {
         <Route path="/user" element={<User />} />
         <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/game/:userId" element={<GameSelection />} />
+        <Route path="/play/:userId/:gameId" element={<Play />} />  {/* ← ADD THIS */}
       </Routes>
     </BrowserRouter>
   );
