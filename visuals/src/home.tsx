@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import Profile from './profile';
 import api from './services/api';
 
 interface User {
@@ -10,10 +12,12 @@ interface User {
   profilePicture?: string;
 }
 
-function App() {
+// User List Component (inner component)
+function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate(); // ← Add navigation hook
 
   useEffect(() => {
     api.get('/users')
@@ -23,10 +27,8 @@ function App() {
         let userData: User[] = [];
         
         if (Array.isArray(response.data)) {
-          // Direct array
           userData = response.data;
         } else if (response.data.data && Array.isArray(response.data.data)) {
-          // Object with data property
           userData = response.data.data;
         }
         
@@ -95,23 +97,27 @@ function App() {
             marginTop: '20px'
           }}>
             {users.map(user => (
-              <div key={user.id} style={{
-                border: '2px solid #e0e0e0',
-                borderRadius: '12px',
-                padding: '20px',
-                textAlign: 'center',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                cursor: 'pointer',
-                background: 'white'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-5px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}>
+              <div 
+                key={user.id}
+                onClick={() => navigate(`/profile/${user.id}`)}  // ← ADD THIS - Navigate to profile
+                style={{
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  textAlign: 'center',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  cursor: 'pointer',
+                  background: 'white'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-5px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
                 <div style={{ fontSize: '3rem', marginBottom: '10px' }}>
                   👤
                 </div>
@@ -133,4 +139,16 @@ function App() {
   );
 }
 
-export default App;
+// Main Home component with Router (outer component)
+function Home() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<UserList />} />
+        <Route path="/profile/:userId" element={<Profile />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default Home; 
