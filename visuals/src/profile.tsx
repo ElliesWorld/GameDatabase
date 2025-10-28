@@ -446,10 +446,7 @@ function Profile() {
                   Select new player
                 </button>
                 <button 
-                  onClick={() => {
-                    // Navigate to games page (to be created later)
-                    alert('Game selection coming soon!');
-                  }}
+                  onClick={() => navigate(`/game/${userId}`)}
                   style={{
                     padding: '25px',
                     background: 'linear-gradient(135deg, #4caf50, #45a049)',

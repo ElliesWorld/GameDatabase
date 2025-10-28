@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import Profile from './profile';
 import User from './user';
+import GameSelection from './game';
 import api from './services/api';
 
 interface User {
@@ -182,6 +183,7 @@ function UserList() {
   );
 }
 
+// Main App component with Router
 function Home() {
   return (
     <BrowserRouter>
@@ -189,6 +191,7 @@ function Home() {
         <Route path="/" element={<UserList />} />
         <Route path="/user" element={<User />} />
         <Route path="/profile/:userId" element={<Profile />} />
+        <Route path="/game/:userId" element={<GameSelection />} />
       </Routes>
     </BrowserRouter>
   );
