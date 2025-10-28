@@ -67,7 +67,6 @@ function User() {
       const response = await api.post('/users', formData);
       console.log('User created:', response.data);
       
-      // Success! Navigate back to home
       navigate('/');
     } catch (error: any) {
       console.error('Error creating user:', error);
