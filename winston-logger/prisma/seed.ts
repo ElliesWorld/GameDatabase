@@ -26,14 +26,14 @@ async function seed() {
     
     console.log('Created 4 games');
     
-    // Insert users
+    // Insert users WITH EMOJI AVATARS
     const usersResult = await db.collection('users').insertMany([
       {
         email: 'john.doe@example.com',
         firstName: 'John',
         lastName: 'Doe',
         nickname: 'johndoe',
-        profilePicture: '/images/avatars/default1.png',
+        profilePicture: '👤',  // ← Emoji instead of path
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -42,7 +42,7 @@ async function seed() {
         firstName: 'Jane',
         lastName: 'Smith',
         nickname: 'janesmith',
-        profilePicture: '/images/avatars/default2.png',
+        profilePicture: '🦊',  // ← Emoji
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -51,7 +51,7 @@ async function seed() {
         firstName: 'test',
         lastName: 'test',
         nickname: 'testtest',
-        profilePicture: '/images/avatars/default3.png',
+        profilePicture: '🐻',  // ← Emoji
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -60,7 +60,7 @@ async function seed() {
         firstName: 'name',
         lastName: 'lastname',
         nickname: 'namelastname',
-        profilePicture: '/images/avatars/default4.png',
+        profilePicture: '🦁',  // ← Emoji
         createdAt: new Date(),
         updatedAt: new Date()
       }

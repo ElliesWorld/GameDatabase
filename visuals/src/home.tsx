@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import Profile from './profile';
+import User from './user';
 import api from './services/api';
 
 interface User {
@@ -12,12 +13,12 @@ interface User {
   profilePicture?: string;
 }
 
-// User List Component (inner component)
+// Home component - User list
 function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const navigate = useNavigate(); // ← Add navigation hook
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get('/users')
@@ -72,12 +73,54 @@ function UserList() {
         background: 'white',
         borderRadius: '12px',
         padding: '30px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        position: 'relative'
       }}>
-        <h1 style={{ marginBottom: '10px' }}>🎮 Game Platform</h1>
-        <h2 style={{ marginBottom: '20px', color: '#666' }}>
-          Users from Database: {users.length}
-        </h2>
+        {/* Header with Title and Add User Button */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <div>
+            <h1 style={{ marginBottom: '10px' }}>🎮 Game Platform</h1>
+            <h2 style={{ marginBottom: '0', color: '#666', fontSize: '1.2rem' }}>
+              Users from Database: {users.length}
+            </h2>
+          </div>
+          
+          {/* Add User Button */}
+          <button
+            onClick={() => navigate('/user')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '15px 25px',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50px',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 12px rgba(102,126,234,0.3)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(102,126,234,0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(102,126,234,0.3)';
+            }}
+          >
+            <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>+</span>
+            <span>Add User</span>
+          </button>
+        </div>
         
         {users.length === 0 ? (
           <div style={{ 
@@ -99,7 +142,7 @@ function UserList() {
             {users.map(user => (
               <div 
                 key={user.id}
-                onClick={() => navigate(`/profile/${user.id}`)}  // ← ADD THIS - Navigate to profile
+                onClick={() => navigate(`/profile/${user.id}`)}
                 style={{
                   border: '2px solid #e0e0e0',
                   borderRadius: '12px',
@@ -119,7 +162,7 @@ function UserList() {
                 }}
               >
                 <div style={{ fontSize: '3rem', marginBottom: '10px' }}>
-                  👤
+                  {user.profilePicture || '👤'}
                 </div>
                 <h3 style={{ margin: '10px 0', color: '#333' }}>
                   {user.nickname}
@@ -139,16 +182,16 @@ function UserList() {
   );
 }
 
-// Main Home component with Router (outer component)
 function Home() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<UserList />} />
+        <Route path="/user" element={<User />} />
         <Route path="/profile/:userId" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );
 }
 
-export default Home; 
+export default Home;

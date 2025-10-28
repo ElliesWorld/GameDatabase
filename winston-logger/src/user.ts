@@ -1,21 +1,25 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { MongoClient } from 'mongodb';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-// GET all users
+// MongoDB direct connection for writes
+const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017';
+const dbName = 'game-database';
+
+// GET all users - USES PRISMA ✅
 router.get("/", async (req, res) => {
   const users = await prisma.user.findMany();
   res.json(users);
 });
 
-// GET user by ID with statistics 
+// GET user by ID with statistics - USES PRISMA ✅
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Fetch user with their game sessions
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
@@ -34,14 +38,12 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    // Calculate statistics
     const gameStats: { [key: string]: { minutes: number; percentage: number } } = {};
     let totalSeconds = 0;
 
-    // Calculate total seconds and per-game stats
     user.gameSessions.forEach(session => {
       const gameName = session.game.name;
-      const seconds = session.duration; // Using 'duration' from your schema
+      const seconds = session.duration;
       
       totalSeconds += seconds;
       
@@ -51,10 +53,8 @@ router.get("/:id", async (req, res) => {
       gameStats[gameName].minutes += seconds;
     });
 
-    // Convert seconds to minutes (1 second = 1 minute for display)
     const totalMinutes = totalSeconds;
     
-    // Calculate percentages
     Object.keys(gameStats).forEach(gameName => {
       const minutes = gameStats[gameName].minutes;
       gameStats[gameName].percentage = totalSeconds > 0 
@@ -87,15 +87,74 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// POST create user
+// POST create user - Uses MongoDB client directly (no replica set needed)
 router.post("/", async (req, res) => {
-  const newUser = await prisma.user.create({
-    data: req.body
-  });
-  res.json(newUser);
+  const client = new MongoClient(mongoUrl);
+  
+  try {
+    const { email, firstName, lastName, nickname, profilePicture } = req.body;
+
+    if (!email || !firstName || !lastName || !nickname) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required'
+      });
+    }
+
+    await client.connect();
+    const db = client.db(dbName);
+    const usersCollection = db.collection('users');
+
+    // Check for duplicates
+    const existing = await usersCollection.findOne({
+      $or: [{ email }, { nickname }]
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: existing.email === email 
+          ? 'Email already exists' 
+          : 'Nickname already taken'
+      });
+    }
+
+    // Insert user
+    const result = await usersCollection.insertOne({
+      email,
+      firstName,
+      lastName,
+      nickname,
+      profilePicture: profilePicture || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    res.status(201).json({
+      success: true,
+      data: {
+        id: result.insertedId.toString(),
+        email,
+        firstName,
+        lastName,
+        nickname,
+        profilePicture,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+  } catch (error: any) {
+    console.error('Error creating user:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create user'
+    });
+  } finally {
+    await client.close();
+  }
 });
 
-// PUT update user
+// PUT update user - USES PRISMA ✅
 router.put("/:id", async (req, res) => {
   const updatedUser = await prisma.user.update({
     where: { id: req.params.id },
@@ -104,7 +163,7 @@ router.put("/:id", async (req, res) => {
   res.json(updatedUser);
 });
 
-// DELETE user
+// DELETE user - USES PRISMA ✅
 router.delete("/:id", async (req, res) => {
   await prisma.user.delete({
     where: { id: req.params.id }
