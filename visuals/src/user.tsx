@@ -21,8 +21,11 @@ function User() {
     profilePicture: ''
   });
   const [selectedAvatar, setSelectedAvatar] = useState<string>('');
+  const [uploadedImage, setUploadedImage] = useState<string>('');
+  const [imagePreview, setImagePreview] = useState<string>('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploadTab, setUploadTab] = useState<'emoji' | 'upload'>('emoji');
 
   // Available avatar options (emojis)
   const avatars = [
@@ -52,10 +55,67 @@ function User() {
 
   const handleAvatarSelect = (avatar: string) => {
     setSelectedAvatar(avatar);
+    setUploadedImage('');
+    setImagePreview('');
     setFormData(prev => ({
       ...prev,
       profilePicture: avatar
     }));
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size must be less than 5MB');
+      return;
+    }
+
+    setError(''); // Clear any previous errors
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to server
+    const formDataUpload = new FormData();
+    formDataUpload.append('profilePicture', file);
+
+    try {
+      const response = await api.post('/upload/profile-picture', formDataUpload, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const imageUrl = response.data.data.url;
+      setUploadedImage(imageUrl);
+      setSelectedAvatar('');
+      
+      // Update formData immediately with the uploaded image URL
+      setFormData(prev => ({
+        ...prev,
+        profilePicture: imageUrl
+      }));
+      
+      setError('');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setError('Failed to upload image. Please try again.');
+      setImagePreview(''); // Clear preview on error
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,10 +130,19 @@ function User() {
       return;
     }
 
-    if (!formData.profilePicture) {
-      setError('Please select an avatar');
+    // Check if either emoji avatar is selected OR image is uploaded
+    if (!formData.profilePicture && !uploadedImage) {
+      setError('Please select an avatar or upload a profile picture');
       setLoading(false);
       return;
+    }
+
+    // If image was uploaded, make sure it's in formData
+    if (uploadedImage && !formData.profilePicture) {
+      setFormData(prev => ({
+        ...prev,
+        profilePicture: uploadedImage
+      }));
     }
 
     // Email validation
@@ -85,7 +154,13 @@ function User() {
     }
 
     try {
-      const response = await api.post('/users', formData);
+      // Ensure profilePicture is set before submitting
+      const submitData = {
+        ...formData,
+        profilePicture: formData.profilePicture || uploadedImage
+      };
+      
+      const response = await api.post('/users', submitData);
       console.log('User created:', response.data);
       
       navigate('/');
@@ -288,7 +363,7 @@ function User() {
               />
             </div>
 
-            {/* Avatar Selection */}
+            {/* Profile Picture Selection */}
             <div style={{ marginBottom: '30px' }}>
               <label style={{
                 display: 'block',
@@ -299,48 +374,156 @@ function User() {
               }}>
                 Profile Picture *
               </label>
-              
+
+              {/* Tab buttons */}
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(5, 1fr)',
-                gap: '15px',
+                display: 'flex',
+                gap: '10px',
                 marginBottom: '20px'
               }}>
-                {avatars.map((avatar) => (
-                  <div
-                    key={avatar}
-                    onClick={() => handleAvatarSelect(avatar)}
-                    style={{
-                      width: '100%',
-                      aspectRatio: '1',
-                      background: selectedAvatar === avatar ? '#667eea' : '#f5f5f5',
-                      border: selectedAvatar === avatar ? '4px solid #764ba2' : '2px solid #e0e0e0',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '3rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      boxShadow: selectedAvatar === avatar ? '0 4px 12px rgba(102,126,234,0.3)' : 'none'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedAvatar !== avatar) {
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                        e.currentTarget.style.borderColor = '#667eea';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedAvatar !== avatar) {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.borderColor = '#e0e0e0';
-                      }
-                    }}
-                  >
-                    {avatar}
-                  </div>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => setUploadTab('emoji')}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: uploadTab === 'emoji' ? '#667eea' : '#f5f5f5',
+                    color: uploadTab === 'emoji' ? 'white' : '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  😀 Choose Emoji
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUploadTab('upload')}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: uploadTab === 'upload' ? '#667eea' : '#f5f5f5',
+                    color: uploadTab === 'upload' ? 'white' : '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  📤 Upload Image
+                </button>
               </div>
+
+              {/* Emoji avatars */}
+              {uploadTab === 'emoji' && (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(5, 1fr)',
+                  gap: '15px',
+                  marginBottom: '20px'
+                }}>
+                  {avatars.map((avatar) => (
+                    <div
+                      key={avatar}
+                      onClick={() => handleAvatarSelect(avatar)}
+                      style={{
+                        width: '100%',
+                        aspectRatio: '1',
+                        background: selectedAvatar === avatar ? '#667eea' : '#f5f5f5',
+                        border: selectedAvatar === avatar ? '4px solid #764ba2' : '2px solid #e0e0e0',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '3rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: selectedAvatar === avatar ? '0 4px 12px rgba(102,126,234,0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedAvatar !== avatar) {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                          e.currentTarget.style.borderColor = '#667eea';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedAvatar !== avatar) {
+                          e.currentTarget.style.transform = 'scale(1)';
+                          e.currentTarget.style.borderColor = '#e0e0e0';
+                        }
+                      }}
+                    >
+                      {avatar}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload section */}
+              {uploadTab === 'upload' && (
+                <div>
+                  <div style={{
+                    border: '2px dashed #e0e0e0',
+                    borderRadius: '12px',
+                    padding: '40px',
+                    textAlign: 'center',
+                    background: '#f9f9f9',
+                    marginBottom: '20px'
+                  }}>
+                    {imagePreview ? (
+                      <div style={{ marginBottom: '20px' }}>
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          style={{
+                            width: '150px',
+                            height: '150px',
+                            objectFit: 'cover',
+                            borderRadius: '50%',
+                            border: '4px solid #667eea'
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📷</div>
+                    )}
+                    
+                    <input
+                      type="file"
+                      id="file-upload"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      style={{ display: 'none' }}
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      style={{
+                        display: 'inline-block',
+                        padding: '12px 30px',
+                        background: '#667eea',
+                        color: 'white',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#5568d3'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = '#667eea'}
+                    >
+                      {imagePreview ? 'Change Image' : 'Choose File'}
+                    </label>
+                    <p style={{ marginTop: '15px', color: '#666', fontSize: '0.9rem' }}>
+                      Supported: JPEG, PNG, GIF, WebP (Max 5MB)
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}

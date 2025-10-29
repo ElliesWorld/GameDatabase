@@ -27,6 +27,8 @@ interface Weather {
 // Home component - User list
 function UserList() {
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [weather, setWeather] = useState<Weather | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -47,6 +49,7 @@ function UserList() {
         
         console.log('Parsed users:', userData);
         setUsers(userData);
+        setFilteredUsers(userData);
         setLoading(false);
       })
       .catch(error => {
@@ -65,6 +68,22 @@ function UserList() {
         console.error('Error fetching weather:', error);
       });
   }, []);
+
+  // Filter users based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredUsers(users);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = users.filter(user => 
+        user.nickname.toLowerCase().includes(query) ||
+        user.firstName.toLowerCase().includes(query) ||
+        user.lastName.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query)
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchQuery, users]);
 
   if (loading) {
     return (
@@ -126,24 +145,36 @@ function UserList() {
           )}
         </div>
 
-        {/* Center - Search (placeholder) */}
+        {/* Center - Search */}
         <div style={{
           flex: 1,
           maxWidth: '400px',
-          margin: '0 20px'
+          margin: '0 20px',
+          position: 'relative'
         }}>
           <input
             type="text"
-            placeholder="search"
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%',
-              padding: '10px 15px',
+              padding: '10px 15px 10px 40px',
               border: '2px solid #e0e0e0',
               borderRadius: '25px',
-              fontSize: '1rem'
+              fontSize: '1rem',
+              outline: 'none'
             }}
-            readOnly
           />
+          <span style={{
+            position: 'absolute',
+            left: '15px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: '1.2rem'
+          }}>
+            🔍
+          </span>
         </div>
 
         <div style={{ width: '150px' }}></div>
@@ -266,7 +297,7 @@ function UserList() {
             </button>
           </div>
           
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 && users.length === 0 ? (
             <div style={{ 
               padding: '40px', 
               textAlign: 'center',
@@ -276,6 +307,16 @@ function UserList() {
               <h3>📭 No users yet!</h3>
               <p>Run <code>npm run seed</code> in your backend to add sample data</p>
             </div>
+          ) : filteredUsers.length === 0 ? (
+            <div style={{ 
+              padding: '40px', 
+              textAlign: 'center',
+              background: '#f5f5f5',
+              borderRadius: '8px'
+            }}>
+              <h3>🔍 No users found</h3>
+              <p>Try a different search term</p>
+            </div>
           ) : (
             <div style={{ 
               display: 'grid', 
@@ -283,7 +324,7 @@ function UserList() {
               gap: '20px',
               marginTop: '20px'
             }}>
-              {users.map(user => (
+              {filteredUsers.map(user => (
                 <div 
                   key={user.id}
                   onClick={() => navigate(`/profile/${user.id}`)}
@@ -306,7 +347,20 @@ function UserList() {
                   }}
                 >
                   <div style={{ fontSize: '3rem', marginBottom: '10px' }}>
-                    {user.profilePicture || '👤'}
+                    {user.profilePicture?.startsWith('/uploads/') ? (
+                      <img 
+                        src={`http://localhost:3000${user.profilePicture}`}
+                        alt={user.nickname}
+                        style={{
+                          width: '80px',
+                          height: '80px',
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      user.profilePicture || '👤'
+                    )}
                   </div>
                   <h3 style={{ margin: '10px 0', color: '#333' }}>
                     {user.nickname}

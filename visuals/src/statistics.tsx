@@ -30,6 +30,10 @@ interface Weather {
 function Statistics() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<GameSession[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [weather, setWeather] = useState<Weather | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<string>('all');
@@ -55,6 +59,16 @@ function Statistics() {
         setLoading(false);
       });
 
+    // Fetch all users for search
+    api.get('/users')
+      .then(response => {
+        const usersData = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setUsers(usersData);
+      })
+      .catch(error => {
+        console.error('Error fetching users:', error);
+      });
+
     // Fetch weather
     api.get('/weather')
       .then(response => {
@@ -65,6 +79,24 @@ function Statistics() {
         console.error('Error fetching weather:', error);
       });
   }, []);
+
+  // Filter users based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredUsers([]);
+      setShowSearchResults(false);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = users.filter(u => 
+        u.nickname?.toLowerCase().includes(query) ||
+        u.firstName?.toLowerCase().includes(query) ||
+        u.lastName?.toLowerCase().includes(query) ||
+        u.email?.toLowerCase().includes(query)
+      );
+      setFilteredUsers(filtered);
+      setShowSearchResults(true);
+    }
+  }, [searchQuery, users]);
 
   // Process data for charts
   const getScatterData = () => {
@@ -221,24 +253,120 @@ function Statistics() {
           )}
         </div>
 
-        {/* Center - Search (placeholder) */}
+        {/* Center - Search */}
         <div style={{
           flex: 1,
           maxWidth: '400px',
-          margin: '0 20px'
+          margin: '0 20px',
+          position: 'relative'
         }}>
           <input
             type="text"
-            placeholder="search"
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%',
-              padding: '10px 15px',
+              padding: '10px 15px 10px 40px',
               border: '2px solid #e0e0e0',
               borderRadius: '25px',
-              fontSize: '1rem'
+              fontSize: '1rem',
+              outline: 'none'
             }}
-            readOnly
           />
+          <span style={{
+            position: 'absolute',
+            left: '15px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: '1.2rem'
+          }}>
+            🔍
+          </span>
+          
+          {/* Search Results Dropdown */}
+          {showSearchResults && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              marginTop: '5px',
+              background: 'white',
+              border: '2px solid #e0e0e0',
+              borderRadius: '12px',
+              maxHeight: '300px',
+              overflowY: 'auto',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 1000
+            }}>
+              {filteredUsers.length === 0 ? (
+                <div style={{
+                  padding: '20px',
+                  textAlign: 'center',
+                  color: '#999'
+                }}>
+                  No users found
+                </div>
+              ) : (
+                filteredUsers.map(u => (
+                  <div
+                    key={u.id}
+                    onClick={() => {
+                      navigate(`/profile/${u.id}`);
+                      setSearchQuery('');
+                      setShowSearchResults(false);
+                    }}
+                    style={{
+                      padding: '12px 15px',
+                      borderBottom: '1px solid #f0f0f0',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                  >
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: '#e0e0e0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.5rem',
+                      overflow: 'hidden'
+                    }}>
+                      {u.profilePicture?.startsWith('/uploads/') ? (
+                        <img 
+                          src={`http://localhost:3000${u.profilePicture}`}
+                          alt={u.nickname}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                        />
+                      ) : (
+                        u.profilePicture || '👤'
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: '#333' }}>
+                        {u.nickname}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                        {u.firstName} {u.lastName}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ width: '150px' }}></div>

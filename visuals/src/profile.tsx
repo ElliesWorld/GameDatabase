@@ -35,9 +35,14 @@ function Profile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentUserIndex, setCurrentUserIndex] = useState<number>(0);
   const [weather, setWeather] = useState<Weather | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     // Fetch user profile with statistics
@@ -54,6 +59,23 @@ function Profile() {
         setLoading(false);
       });
 
+    // Fetch all users for carousel
+    api.get('/users')
+      .then(response => {
+        console.log('All users:', response.data);
+        const usersData = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setAllUsers(usersData);
+        
+        // Find current user index
+        const currentIndex = usersData.findIndex((u: any) => u.id === userId);
+        if (currentIndex !== -1) {
+          setCurrentUserIndex(currentIndex);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching users:', error);
+      });
+
     // Fetch weather
     api.get('/weather')
       .then(response => {
@@ -64,6 +86,24 @@ function Profile() {
         console.error('Error fetching weather:', error);
       });
   }, [userId]);
+
+  // Filter users based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredUsers([]);
+      setShowSearchResults(false);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = allUsers.filter(u => 
+        u.nickname?.toLowerCase().includes(query) ||
+        u.firstName?.toLowerCase().includes(query) ||
+        u.lastName?.toLowerCase().includes(query) ||
+        u.email?.toLowerCase().includes(query)
+      );
+      setFilteredUsers(filtered);
+      setShowSearchResults(true);
+    }
+  }, [searchQuery, allUsers]);
 
   if (loading) {
     return (
@@ -153,24 +193,120 @@ function Profile() {
           )}
         </div>
 
-        {/* Center - Search (placeholder) */}
+        {/* Center - Search */}
         <div style={{
           flex: 1,
           maxWidth: '400px',
-          margin: '0 20px'
+          margin: '0 20px',
+          position: 'relative'
         }}>
           <input
             type="text"
-            placeholder="search"
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%',
-              padding: '10px 15px',
+              padding: '10px 15px 10px 40px',
               border: '2px solid #e0e0e0',
               borderRadius: '25px',
-              fontSize: '1rem'
+              fontSize: '1rem',
+              outline: 'none'
             }}
-            readOnly
           />
+          <span style={{
+            position: 'absolute',
+            left: '15px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: '1.2rem'
+          }}>
+            🔍
+          </span>
+          
+          {/* Search Results Dropdown */}
+          {showSearchResults && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              marginTop: '5px',
+              background: 'white',
+              border: '2px solid #e0e0e0',
+              borderRadius: '12px',
+              maxHeight: '300px',
+              overflowY: 'auto',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 1000
+            }}>
+              {filteredUsers.length === 0 ? (
+                <div style={{
+                  padding: '20px',
+                  textAlign: 'center',
+                  color: '#999'
+                }}>
+                  No users found
+                </div>
+              ) : (
+                filteredUsers.map(u => (
+                  <div
+                    key={u.id}
+                    onClick={() => {
+                      navigate(`/profile/${u.id}`);
+                      setSearchQuery('');
+                      setShowSearchResults(false);
+                    }}
+                    style={{
+                      padding: '12px 15px',
+                      borderBottom: '1px solid #f0f0f0',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                  >
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: '#e0e0e0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.5rem',
+                      overflow: 'hidden'
+                    }}>
+                      {u.profilePicture?.startsWith('/uploads/') ? (
+                        <img 
+                          src={`http://localhost:3000${u.profilePicture}`}
+                          alt={u.nickname}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                        />
+                      ) : (
+                        u.profilePicture || '👤'
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: '#333' }}>
+                        {u.nickname}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                        {u.firstName} {u.lastName}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ width: '150px' }}></div>
@@ -246,7 +382,7 @@ function Profile() {
           boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
         }}>
           
-          {/* User Icons Row at Top */}
+          {/* User Icons Row at Top - Carousel */}
           <div style={{
             display: 'flex',
             justifyContent: 'center',
@@ -257,40 +393,127 @@ function Profile() {
             borderBottom: '2px solid #e0e0e0'
           }}>
 
-            {/* User Icons (placeholder for multiple users) */}
-            {[1, 2, 3, 4, 5, 6].map((num) => (
-              <div 
-                key={num}
-                style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  background: num === 1 ? '#667eea' : '#e0e0e0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '2rem',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s',
-                  border: num === 1 ? '3px solid #764ba2' : 'none'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                {user.profilePicture || '👤'}
-              </div>
-            ))}
-            
+            {/* Left Arrow */}
             <button
+              onClick={() => {
+                const newIndex = currentUserIndex > 0 ? currentUserIndex - 1 : allUsers.length - 1;
+                setCurrentUserIndex(newIndex);
+                navigate(`/profile/${allUsers[newIndex].id}`);
+              }}
               style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
                 background: 'none',
                 border: 'none',
-                fontSize: '2.5rem',
-                cursor: 'pointer'
+                fontSize: '2rem',
+                cursor: 'pointer',
+                padding: '5px',
+                color: '#667eea'
               }}
+              disabled={allUsers.length === 0}
+            >
+              ◀
+            </button>
+
+            {/* User Icons - Show 6 users at a time */}
+            {allUsers.length > 0 ? (
+              (() => {
+                // Calculate which 6 users to show
+                const visibleUsers = [];
+                for (let i = 0; i < 6; i++) {
+                  const index = (currentUserIndex - 2 + i + allUsers.length) % allUsers.length;
+                  visibleUsers.push({ ...allUsers[index], position: i });
+                }
+                
+                return visibleUsers.map((displayUser, i) => {
+                  const isCenter = i === 2; // Center position
+                  const isCurrent = displayUser.id === userId;
+                  
+                  return (
+                    <div 
+                      key={displayUser.id}
+                      onClick={() => navigate(`/profile/${displayUser.id}`)}
+                      style={{
+                        width: isCenter ? '70px' : '60px',
+                        height: isCenter ? '70px' : '60px',
+                        borderRadius: '50%',
+                        background: isCurrent ? '#667eea' : '#e0e0e0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: isCenter ? '2.5rem' : '2rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s',
+                        border: isCurrent ? '3px solid #764ba2' : 'none',
+                        overflow: 'hidden',
+                        opacity: isCenter ? 1 : 0.7,
+                        transform: isCenter ? 'scale(1.1)' : 'scale(1)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isCenter) {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                          e.currentTarget.style.opacity = '0.9';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isCenter) {
+                          e.currentTarget.style.transform = 'scale(1)';
+                          e.currentTarget.style.opacity = '0.7';
+                        }
+                      }}
+                    >
+                      {displayUser.profilePicture?.startsWith('/uploads/') ? (
+                        <img 
+                          src={`http://localhost:3000${displayUser.profilePicture}`}
+                          alt={displayUser.nickname}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                        />
+                      ) : (
+                        displayUser.profilePicture || '👤'
+                      )}
+                    </div>
+                  );
+                });
+              })()
+            ) : (
+              // Placeholder if no users loaded yet
+              [1, 2, 3, 4, 5, 6].map((num) => (
+                <div 
+                  key={num}
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    background: '#e0e0e0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2rem'
+                  }}
+                >
+                  👤
+                </div>
+              ))
+            )}
+            
+            {/* Right Arrow */}
+            <button
+              onClick={() => {
+                const newIndex = currentUserIndex < allUsers.length - 1 ? currentUserIndex + 1 : 0;
+                setCurrentUserIndex(newIndex);
+                navigate(`/profile/${allUsers[newIndex].id}`);
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '2rem',
+                cursor: 'pointer',
+                padding: '5px',
+                color: '#667eea'
+              }}
+              disabled={allUsers.length === 0}
             >
               ➡
             </button>
@@ -316,9 +539,22 @@ function Profile() {
                 justifyContent: 'center',
                 fontSize: '12rem',
                 marginBottom: '20px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                overflow: 'hidden'
               }}>
-                {user.profilePicture || '👤'}
+                {user.profilePicture?.startsWith('/uploads/') ? (
+                  <img 
+                    src={`http://localhost:3000${user.profilePicture}`}
+                    alt={user.nickname}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                ) : (
+                  user.profilePicture || '👤'
+                )}
               </div>
               <h2 style={{ 
                 fontSize: '2rem', 

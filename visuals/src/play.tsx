@@ -462,7 +462,19 @@ function Play() {
             fontSize: '3rem',
             overflow: 'hidden'
           }}>
-            {user.profilePicture || '👤'}
+            {user.profilePicture?.startsWith('/uploads/') ? (
+              <img 
+                src={`http://localhost:3000${user.profilePicture}`}
+                alt={user.nickname}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+            ) : (
+              user.profilePicture || '👤'
+            )}
           </div>
           <div style={{
             fontWeight: 'bold',
