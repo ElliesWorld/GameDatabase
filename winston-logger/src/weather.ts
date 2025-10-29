@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import logger from './logger'; 
 
 const router = Router();
 
@@ -12,11 +13,13 @@ async function getWeatherByCity(cityName: string) {
   }
   
   const location = geocodeData.results[0];
-  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current_weather=true`;
+  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current_weather=true&timezone=auto`;
   const weatherRes = await fetch(weatherUrl);
   const weatherData = await weatherRes.json();
   
   const weatherCode = weatherData.current_weather.weathercode;
+  const currentTime = weatherData.current_weather.time; // ISO 8601 format
+  
   let condition = 'Clear Sky';
   let icon = '☀️';
   let game = 'Snowball Showdown';
@@ -40,11 +43,23 @@ async function getWeatherByCity(cityName: string) {
     game = 'Bear Panic';
   }
   
+  // Format the date
+  const date = new Date(currentTime);
+  const options: Intl.DateTimeFormatOptions = { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  };
+  const formattedDate = date.toLocaleDateString('en-US', options);
+  
   return {
     location: `${location.name}, ${location.country}`,
     temperature: Math.round(weatherData.current_weather.temperature),
     icon,
     condition,
+    date: formattedDate, // e.g., "Wednesday, Oct 29, 2025"
+    time: currentTime, // ISO format: "2025-10-29T14:30"
     recommendedGame: game,
     suggestion: `Perfect weather for ${game}!`
   };
@@ -54,9 +69,10 @@ async function getWeatherByCity(cityName: string) {
 router.get('/:city', async (req, res) => {
   try {
     const weather = await getWeatherByCity(req.params.city);
+    logger.info(`Weather fetched for ${req.params.city}: ${weather.temperature}°C, ${weather.condition}`);
     res.json({ success: true, data: weather });
   } catch (error) {
-    console.error('Weather error:', error);
+    logger.error('Weather error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch weather' 
@@ -68,9 +84,10 @@ router.get('/:city', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const weather = await getWeatherByCity('Oslo');
+    logger.info(`Default weather fetched for Oslo: ${weather.temperature}°C, ${weather.condition}`);
     res.json({ success: true, data: weather });
   } catch (error) {
-    console.error('Weather error:', error);
+    logger.error('Weather error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch weather' 
