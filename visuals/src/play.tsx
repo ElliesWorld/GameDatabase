@@ -124,12 +124,17 @@ function Play() {
       
       {/* Top Navigation Bar */}
       <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
         background: 'white',
         padding: '15px 30px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        zIndex: 200
       }}>
         {/* Left side - Weather */}
         <div style={{
@@ -189,7 +194,8 @@ function Play() {
         alignItems: 'center',
         paddingTop: '20px',
         gap: '30px',
-        boxShadow: '2px 0 8px rgba(0,0,0,0.1)'
+        boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
+        zIndex: 100
       }}>
         <button
           onClick={() => navigate(`/profile/${userId}`)}
@@ -226,12 +232,31 @@ function Play() {
           <span style={{ fontSize: '1.5rem' }}>🎮</span>
           <span>games</span>
         </button>
+
+        <button
+          onClick={() => navigate('/statistics')}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '5px',
+            color: '#666',
+            fontSize: '0.7rem'
+          }}
+        >
+          <span style={{ fontSize: '1.5rem' }}>📊</span>
+          <span>stats</span>
+        </button>
       </div>
 
       {/* Main Content */}
       <div style={{
         flex: 1,
         marginLeft: '60px',
+        marginTop: '70px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
