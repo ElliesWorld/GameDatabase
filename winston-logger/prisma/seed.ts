@@ -1,4 +1,5 @@
 import { MongoClient, ObjectId } from 'mongodb';
+import logger from '../src/logger';
 
 const url = 'mongodb://localhost:27017';
 const dbName = 'game-database';
@@ -8,6 +9,7 @@ async function seed() {
   
   try {
     await client.connect();
+    logger.info('Connected to MongoDB');
     
     const db = client.db(dbName);
     
@@ -15,6 +17,7 @@ async function seed() {
     await db.collection('game_sessions').deleteMany({});
     await db.collection('games').deleteMany({});
     await db.collection('users').deleteMany({});
+    logger.info('Cleared existing data');
     
     // Insert games
     const gamesResult = await db.collection('games').insertMany([
@@ -24,60 +27,121 @@ async function seed() {
       { name: 'Tarzan Rumble', imageUrl: '/images/games/tarzan.png', createdAt: new Date() }
     ]);
     
-    console.log('Created 4 games');
+    logger.info('Created 4 games');
     
-    // Insert users WITH EMOJI AVATARS
+    // Insert users WITH COOL CHARACTER NAMES AND EMOJI AVATARS
     const usersResult = await db.collection('users').insertMany([
       {
-        email: 'john.doe@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        nickname: 'johndoe',
-        profilePicture: '👤',  // ← Emoji instead of path
+        email: 'mickey.mouse@disney.com',
+        firstName: 'Mickey',
+        lastName: 'Mouse',
+        nickname: 'Mickey',
+        profilePicture: '🐭',  // Mouse emoji for Mickey
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
-        email: 'jane.smith@example.com',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        nickname: 'janesmith',
-        profilePicture: '🦊',  // ← Emoji
+        email: 'donald.duck@disney.com',
+        firstName: 'Donald',
+        lastName: 'Duck',
+        nickname: 'Donny',
+        profilePicture: '🦆',  // Duck emoji for Donald
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
-        email: 'test.test@example.com',
-        firstName: 'test',
-        lastName: 'test',
-        nickname: 'testtest',
-        profilePicture: '🐻',  // ← Emoji
+        email: 'scooby.doo@mystery.com',
+        firstName: 'Scooby',
+        lastName: 'Doo',
+        nickname: 'Scooby',
+        profilePicture: '🐕',  // Dog emoji for Scooby
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
-        email: 'user.name@example.com',
-        firstName: 'name',
-        lastName: 'lastname',
-        nickname: 'namelastname',
-        profilePicture: '🦁',  // ← Emoji
+        email: 'winnie.pooh@hundredacre.com',
+        firstName: 'Winnie',
+        lastName: 'Pooh',
+        nickname: 'Pooh',
+        profilePicture: '🐻',  // Bear emoji for Winnie the Pooh
         createdAt: new Date(),
         updatedAt: new Date()
       }
     ]);
     
-    console.log('\n========================================');
-    console.log('Seeding completed successfully!');
-    console.log('========================================');
-    console.log('Summary:');
-    console.log('   - Games: 4');
-    console.log('   - Users: 4');
-    console.log('   - Game Sessions: 9');
-    console.log('========================================\n');
+    logger.info('Created 4 users: Mickey Mouse, Donald Duck, Scooby Doo, Winnie the Pooh');
     
+    // Get the inserted IDs
+    const gameIds = Object.values(gamesResult.insertedIds) as ObjectId[];
+    const userIds = Object.values(usersResult.insertedIds) as ObjectId[];
+    
+    // Insert game sessions
+    const sessionsResult = await db.collection('game_sessions').insertMany([
+      // Mickey Mouse sessions
+      {
+        userId: userIds[0],
+        gameId: gameIds[2], // Meteor Mayhem
+        duration: 20,
+        createdAt: new Date('2025-10-29T10:00:00Z'),
+        updatedAt: new Date('2025-10-29T10:00:00Z')
+      },
+      
+      // Donald Duck (Donny) sessions
+      {
+        userId: userIds[1],
+        gameId: gameIds[0], // Snowball Showdown
+        duration: 3,
+        createdAt: new Date('2025-10-29T11:00:00Z'),
+        updatedAt: new Date('2025-10-29T11:00:00Z')
+      },
+      
+      // Scooby Doo sessions
+      {
+        userId: userIds[2],
+        gameId: gameIds[0], // Snowball Showdown
+        duration: 2,
+        createdAt: new Date('2025-10-29T12:00:00Z'),
+        updatedAt: new Date('2025-10-29T12:00:00Z')
+      },
+      
+      // Winnie the Pooh sessions
+      {
+        userId: userIds[3],
+        gameId: gameIds[1], // Bear Panic
+        duration: 5,
+        createdAt: new Date('2025-10-29T13:00:00Z'),
+        updatedAt: new Date('2025-10-29T13:00:00Z')
+      },
+      {
+        userId: userIds[3],
+        gameId: gameIds[2], // Meteor Mayhem
+        duration: 4,
+        createdAt: new Date('2025-10-29T14:00:00Z'),
+        updatedAt: new Date('2025-10-29T14:00:00Z')
+      }
+    ]);
+    
+    logger.info('Created 5 game sessions');
+    
+    logger.info('========================================');
+    logger.info('Seeding completed successfully!');
+    logger.info('========================================');
+    logger.info('Summary:');
+    logger.info('   - Games: 4');
+    logger.info('   - Users: 4 (Mickey Mouse, Donald Duck, Scooby Doo, Winnie the Pooh)');
+    logger.info('   - Game Sessions: 5');
+    logger.info('========================================');
+    
+  } catch (error) {
+    logger.error('Error during seeding:', error);
+    throw error;
   } finally {
     await client.close();
+    logger.info('MongoDB connection closed');
   }
 }
 
-seed().catch(console.error);
+seed().catch((error) => {
+  logger.error('Seed script failed:', error);
+  process.exit(1);
+});

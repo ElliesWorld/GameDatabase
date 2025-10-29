@@ -382,7 +382,8 @@ function Statistics() {
                     type="number" 
                     dataKey="x" 
                     name="Times Played"
-                    domain={[1, 'auto']}
+                    domain={[0, 'dataMax + 1']}
+                    allowDecimals={false}
                     label={{ value: 'Times Played', position: 'insideBottom', offset: -5 }}
                   />
                   <YAxis 
@@ -464,8 +465,8 @@ function Statistics() {
               <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>
                 Total Minutes per Game
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={barData}>
+              <ResponsiveContainer width="100%" height={340}>
+                <BarChart data={barData} margin={{ top: 10, right: 10, bottom: 20, left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="game" />
                   <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
