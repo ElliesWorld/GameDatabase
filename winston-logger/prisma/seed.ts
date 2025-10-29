@@ -66,23 +66,6 @@ async function seed() {
       }
     ]);
     
-    // Get inserted IDs
-    const gameIds = Object.values(gamesResult.insertedIds);
-    const userIds = Object.values(usersResult.insertedIds);
-    
-    // Insert game sessions
-    await db.collection('game_sessions').insertMany([
-      { userId: userIds[0], gameId: gameIds[0], duration: 2400, createdAt: new Date() },
-      { userId: userIds[0], gameId: gameIds[1], duration: 3180, createdAt: new Date() },
-      { userId: userIds[0], gameId: gameIds[2], duration: 1560, createdAt: new Date() },
-      { userId: userIds[1], gameId: gameIds[0], duration: 1800, createdAt: new Date() },
-      { userId: userIds[1], gameId: gameIds[3], duration: 2700, createdAt: new Date() },
-      { userId: userIds[2], gameId: gameIds[2], duration: 3600, createdAt: new Date() },
-      { userId: userIds[2], gameId: gameIds[1], duration: 1200, createdAt: new Date() },
-      { userId: userIds[3], gameId: gameIds[3], duration: 2100, createdAt: new Date() },
-      { userId: userIds[3], gameId: gameIds[0], duration: 1500, createdAt: new Date() }
-    ]);
-    
     console.log('\n========================================');
     console.log('Seeding completed successfully!');
     console.log('========================================');
