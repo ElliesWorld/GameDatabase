@@ -114,30 +114,130 @@ function Profile() {
     <div style={{ 
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       minHeight: '100vh',
-      padding: '40px 20px'
+      display: 'flex',
+      flexDirection: 'column'
     }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        
-        {/* Weather Widget */}
-        {weather && (
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '12px',
-            padding: '15px 25px',
-            marginBottom: '30px',
-            display: 'flex',
-            alignItems: 'center',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            maxWidth: '300px'
-          }}>
-            <span style={{ fontSize: '2.5rem', marginRight: '15px' }}>{weather.icon}</span>
-            <div>
-              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{weather.date}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{weather.temperature}°C</div>
-            </div>
-          </div>
-        )}
+      
+      {/* Top Navigation Bar */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        background: 'white',
+        padding: '15px 30px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        zIndex: 200
+      }}>
+        {/* Left side - Weather */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          {weather && (
+            <>
+              <span style={{ fontSize: '2rem' }}>{weather.icon}</span>
+              <div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                  {weather.date}
+                </div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#667eea' }}>
+                  {weather.temperature}°C
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
+        {/* Center - Search (placeholder) */}
+        <div style={{
+          flex: 1,
+          maxWidth: '400px',
+          margin: '0 20px'
+        }}>
+          <input
+            type="text"
+            placeholder="search"
+            style={{
+              width: '100%',
+              padding: '10px 15px',
+              border: '2px solid #e0e0e0',
+              borderRadius: '25px',
+              fontSize: '1rem'
+            }}
+            readOnly
+          />
+        </div>
+
+        <div style={{ width: '150px' }}></div>
+      </div>
+
+      {/* Sidebar */}
+      <div style={{
+        position: 'fixed',
+        left: 0,
+        top: '70px',
+        width: '60px',
+        height: 'calc(100vh - 70px)',
+        background: '#f5f5f5',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        paddingTop: '20px',
+        gap: '30px',
+        boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
+        zIndex: 100
+      }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '5px',
+            color: '#666',
+            fontSize: '0.7rem'
+          }}
+        >
+          <span style={{ fontSize: '1.5rem' }}>👤</span>
+          <span>users</span>
+        </button>
+        
+        <button
+          onClick={() => navigate('/statistics')}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '5px',
+            color: '#666',
+            fontSize: '0.7rem'
+          }}
+        >
+          <span style={{ fontSize: '1.5rem' }}>📊</span>
+          <span>stats</span>
+        </button>
+      </div>
+
+      <div style={{ 
+        maxWidth: '1400px', 
+        margin: '0 auto',
+        marginLeft: '60px',
+        marginTop: '70px',
+        padding: '40px 20px',
+        width: '100%'
+      }}>
+        
         {/* Main Profile Card */}
         <div style={{
           background: 'white',
@@ -154,37 +254,8 @@ function Profile() {
             gap: '20px',
             marginBottom: '40px',
             paddingBottom: '30px',
-            borderBottom: '2px solid #e0e0e0',
-            position: 'relative'
+            borderBottom: '2px solid #e0e0e0'
           }}>
-            <button
-              onClick={() => navigate('/')}
-              style={{
-                position: 'absolute',
-                left: 0,
-                background: 'none',
-                border: 'none',
-                fontSize: '2rem',
-                cursor: 'pointer',
-                padding: '5px'
-              }}
-            >
-              ◀
-            </button>
-            
-            <input
-              type="text"
-              placeholder="🔍 search"
-              style={{
-                position: 'absolute',
-                right: 0,
-                padding: '10px 15px',
-                borderRadius: '20px',
-                border: '2px solid #e0e0e0',
-                fontSize: '1rem',
-                width: '250px'
-              }}
-            />
 
             {/* User Icons (placeholder for multiple users) */}
             {[1, 2, 3, 4, 5, 6].map((num) => (
