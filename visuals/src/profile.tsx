@@ -23,10 +23,19 @@ interface UserProfile {
   };
 }
 
+interface Weather {
+  location: string;
+  temperature: number;
+  icon: string;
+  condition: string;
+  date: string;
+}
+
 function Profile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [weather, setWeather] = useState<Weather | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -43,6 +52,16 @@ function Profile() {
         console.error('Error fetching profile:', error);
         setError(error.message);
         setLoading(false);
+      });
+
+    // Fetch weather
+    api.get('/weather')
+      .then(response => {
+        const weatherData = response.data.data || response.data;
+        setWeather(weatherData);
+      })
+      .catch(error => {
+        console.error('Error fetching weather:', error);
       });
   }, [userId]);
 
@@ -100,22 +119,24 @@ function Profile() {
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         
         {/* Weather Widget */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          borderRadius: '12px',
-          padding: '15px 25px',
-          marginBottom: '30px',
-          display: 'flex',
-          alignItems: 'center',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          maxWidth: '300px'
-        }}>
-          <span style={{ fontSize: '2.5rem', marginRight: '15px' }}>🌤️</span>
-          <div>
-            <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>Wednesday, 15 Oct 2025</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>10°C</div>
+        {weather && (
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: '12px',
+            padding: '15px 25px',
+            marginBottom: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            maxWidth: '300px'
+          }}>
+            <span style={{ fontSize: '2.5rem', marginRight: '15px' }}>{weather.icon}</span>
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{weather.date}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{weather.temperature}°C</div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Profile Card */}
         <div style={{
@@ -185,7 +206,7 @@ function Profile() {
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
               >
-                👤
+                {user.profilePicture || '👤'}
               </div>
             ))}
             
@@ -226,7 +247,7 @@ function Profile() {
                 marginBottom: '20px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
               }}>
-                👤
+                {user.profilePicture || '👤'}
               </div>
               <h2 style={{ 
                 fontSize: '2rem', 

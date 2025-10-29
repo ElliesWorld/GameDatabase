@@ -1,9 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from './services/api';
 
+interface Weather {
+  location: string;
+  temperature: number;
+  icon: string;
+  condition: string;
+  date: string;
+}
+
 function User() {
   const navigate = useNavigate();
+  const [weather, setWeather] = useState<Weather | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -20,6 +29,18 @@ function User() {
     '👤', '🦊', '🐻', '🦁', '🐯',
     '🦄', '🐼', '🐨', '🦝', '🐶'
   ];
+
+  useEffect(() => {
+    // Fetch weather
+    api.get('/weather')
+      .then(response => {
+        const weatherData = response.data.data || response.data;
+        setWeather(weatherData);
+      })
+      .catch(error => {
+        console.error('Error fetching weather:', error);
+      });
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -84,22 +105,24 @@ function User() {
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         
         {/* Weather Widget */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          borderRadius: '12px',
-          padding: '15px 25px',
-          marginBottom: '30px',
-          display: 'flex',
-          alignItems: 'center',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          maxWidth: '300px'
-        }}>
-          <span style={{ fontSize: '2.5rem', marginRight: '15px' }}>🌤️</span>
-          <div>
-            <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>Wednesday, 15 Oct 2025</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>10°C</div>
+        {weather && (
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: '12px',
+            padding: '15px 25px',
+            marginBottom: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            maxWidth: '300px'
+          }}>
+            <span style={{ fontSize: '2.5rem', marginRight: '15px' }}>{weather.icon}</span>
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{weather.date}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{weather.temperature}°C</div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Registration Card */}
         <div style={{

@@ -7,6 +7,7 @@ interface Weather {
   temperature: number;
   icon: string;
   condition: string;
+  date: string;
 }
 
 function Play() {
@@ -93,8 +94,7 @@ function Play() {
     setIsPaused(false);
 
     if (seconds === 0) {
-      alert('No time recorded!');
-      navigate(`/profile/${userId}`);
+      // Reset timer but stay on page
       return;
     }
 
@@ -106,11 +106,14 @@ function Play() {
         duration: seconds  // seconds = minutes in display (1 sec = 1 min)
       });
 
-      alert(`Game saved! You played for ${formatTime(seconds)}\n(${seconds} seconds = ${seconds} minutes for statistics)`);
-      navigate(`/profile/${userId}`);
+      // Reset the timer to 0 after saving
+      setSeconds(0);
+      
+      // Stay on play page - user can navigate using sidebar
     } catch (error: any) {
       console.error('Error saving game session:', error);
-      alert('Failed to save game session: ' + (error.response?.data?.message || error.message));
+      // Reset timer even if save fails
+      setSeconds(0);
     }
   };
 
@@ -147,7 +150,7 @@ function Play() {
               <span style={{ fontSize: '2rem' }}>{weather.icon}</span>
               <div>
                 <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
-                  Wednesday, 15 Oct 2025
+                  {weather.date}
                 </div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#667eea' }}>
                   {weather.temperature}°C
@@ -207,30 +210,13 @@ function Play() {
             flexDirection: 'column',
             alignItems: 'center',
             gap: '5px',
-            color: '#666',
-            fontSize: '0.7rem'
-          }}
-        >
-          <span style={{ fontSize: '1.5rem' }}>👤</span>
-          <span>profile</span>
-        </button>
-        
-        <button
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '5px',
             color: '#667eea',
             fontSize: '0.7rem',
             fontWeight: 'bold'
           }}
         >
-          <span style={{ fontSize: '1.5rem' }}>🎮</span>
-          <span>games</span>
+          <span style={{ fontSize: '1.5rem' }}>👤</span>
+          <span>profile</span>
         </button>
 
         <button

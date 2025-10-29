@@ -16,9 +16,18 @@ interface User {
   profilePicture?: string;
 }
 
+interface Weather {
+  location: string;
+  temperature: number;
+  icon: string;
+  condition: string;
+  date: string;
+}
+
 // Home component - User list
 function UserList() {
   const [users, setUsers] = useState<User[]>([]);
+  const [weather, setWeather] = useState<Weather | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -44,6 +53,16 @@ function UserList() {
         console.error('Error:', error);
         setError(error.message);
         setLoading(false);
+      });
+
+    // Fetch weather
+    api.get('/weather')
+      .then(response => {
+        const weatherData = response.data.data || response.data;
+        setWeather(weatherData);
+      })
+      .catch(error => {
+        console.error('Error fetching weather:', error);
       });
   }, []);
 
@@ -74,28 +93,37 @@ function UserList() {
       
       {/* Top Navigation Bar */}
       <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
         background: 'white',
         padding: '15px 30px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        zIndex: 200
       }}>
-        {/* Left side - Title */}
+        {/* Left side - Weather */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '10px'
         }}>
-          <span style={{ fontSize: '2rem' }}>🎮</span>
-          <div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-              Game Platform
-            </div>
-            <div style={{ fontSize: '0.9rem', color: '#666' }}>
-              Users: {users.length}
-            </div>
-          </div>
+          {weather && (
+            <>
+              <span style={{ fontSize: '2rem' }}>{weather.icon}</span>
+              <div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                  {weather.date}
+                </div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#667eea' }}>
+                  {weather.temperature}°C
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Center - Search (placeholder) */}
@@ -179,6 +207,7 @@ function UserList() {
       <div style={{
         flex: 1,
         marginLeft: '60px',
+        marginTop: '70px',
         padding: '40px',
         overflowY: 'auto'
       }}>

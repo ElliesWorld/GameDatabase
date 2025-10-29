@@ -24,6 +24,7 @@ interface Weather {
   temperature: number;
   icon: string;
   condition: string;
+  date: string;
 }
 
 function Statistics() {
@@ -210,7 +211,7 @@ function Statistics() {
               <span style={{ fontSize: '2rem' }}>{weather.icon}</span>
               <div>
                 <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
-                  Wednesday, 15 Oct 2025
+                  {weather.date}
                 </div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#667eea' }}>
                   {weather.temperature}°C
@@ -274,7 +275,7 @@ function Statistics() {
           }}
         >
           <span style={{ fontSize: '1.5rem' }}>👤</span>
-          <span>profile</span>
+          <span>users</span>
         </button>
         
         <button
@@ -293,24 +294,6 @@ function Statistics() {
         >
           <span style={{ fontSize: '1.5rem' }}>📊</span>
           <span>stats</span>
-        </button>
-
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '5px',
-            color: '#666',
-            fontSize: '0.7rem'
-          }}
-        >
-          <span style={{ fontSize: '1.5rem' }}>🎮</span>
-          <span>games</span>
         </button>
       </div>
 
