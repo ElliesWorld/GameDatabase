@@ -5,5 +5,12 @@ node_modules/
 public/uploads/*
 !public/uploads/.gitkeep
 
+uploads/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+
 logs/
 *.log
