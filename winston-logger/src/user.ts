@@ -1,6 +1,9 @@
 import { Router } from 'express';
+import type { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { MongoClient } from 'mongodb';
+import { z } from 'zod';
+import logger from './logger.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -9,14 +12,58 @@ const prisma = new PrismaClient();
 const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017';
 const dbName = 'game-database';
 
-// GET all users - USES PRISMA ✅
-router.get("/", async (req, res) => {
-  const users = await prisma.user.findMany();
-  res.json(users);
+// Zod validation schemas
+const createUserSchema = z.object({
+  email: z.string()
+    .email('Invalid email format')
+    .min(1, 'Email is required')
+    .toLowerCase()
+    .trim(),
+  
+  firstName: z.string()
+    .min(1, 'First name is required')
+    .max(50, 'First name must be less than 50 characters')
+    .trim(),
+  
+  lastName: z.string()
+    .min(1, 'Last name is required')
+    .max(50, 'Last name must be less than 50 characters')
+    .trim(),
+  
+  nickname: z.string()
+    .min(1, 'Nickname is required')
+    .max(30, 'Nickname must be less than 30 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Nickname can only contain letters, numbers, and underscores')
+    .trim(),
+  
+  profilePicture: z.string()
+    .min(1, 'Profile picture is required')
+    .refine(
+      (val) => val.startsWith('/uploads/') || /^[\p{Emoji}]$/u.test(val),
+      'Profile picture must be an emoji or uploaded image path'
+    )
+    .optional()
 });
 
-// GET user by ID with statistics - USES PRISMA ✅
-router.get("/:id", async (req, res) => {
+const updateUserSchema = createUserSchema.partial();
+
+// GET all users
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany();
+    logger.info(`Fetched ${users.length} users`);
+    res.json(users);
+  } catch (error: any) {
+    logger.error(`Error fetching users: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users'
+    });
+  }
+});
+
+// GET user by ID with statistics
+router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -32,6 +79,7 @@ router.get("/:id", async (req, res) => {
     });
 
     if (!user) {
+      logger.warn(`User not found: ${id}`);
       return res.status(404).json({ 
         success: false, 
         message: 'User not found' 
@@ -62,6 +110,8 @@ router.get("/:id", async (req, res) => {
         : 0;
     });
 
+    logger.info(`Fetched user profile: ${id}`);
+    
     res.json({
       success: true,
       data: {
@@ -78,8 +128,8 @@ router.get("/:id", async (req, res) => {
         }
       }
     });
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
+  } catch (error: any) {
+    logger.error(`Error fetching user profile: ${error.message}`);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch user profile' 
@@ -87,19 +137,27 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// POST create user - Uses MongoDB client directly (no replica set needed)
-router.post("/", async (req, res) => {
+// POST create user 
+router.post("/", async (req: Request, res: Response) => {
   const client = new MongoClient(mongoUrl);
   
   try {
-    const { email, firstName, lastName, nickname, profilePicture } = req.body;
-
-    if (!email || !firstName || !lastName || !nickname) {
+    // Validate request body with Zod
+    const validationResult = createUserSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      logger.warn(`Validation failed for user creation: ${JSON.stringify(validationResult.error.errors)}`);
       return res.status(400).json({
         success: false,
-        message: 'All fields are required'
+        message: 'Validation failed',
+        errors: validationResult.error.errors.map((err) => ({
+          field: err.path.join('.'),
+          message: err.message
+        }))
       });
     }
+
+    const { email, firstName, lastName, nickname, profilePicture } = validationResult.data;
 
     await client.connect();
     const db = client.db(dbName);
@@ -111,11 +169,13 @@ router.post("/", async (req, res) => {
     });
 
     if (existing) {
+      const message = existing.email === email 
+        ? 'Email already exists' 
+        : 'Nickname already taken';
+      logger.warn(`Duplicate user: ${message}`);
       return res.status(400).json({
         success: false,
-        message: existing.email === email 
-          ? 'Email already exists' 
-          : 'Nickname already taken'
+        message
       });
     }
 
@@ -129,6 +189,8 @@ router.post("/", async (req, res) => {
       createdAt: new Date(),
       updatedAt: new Date()
     });
+    
+    logger.info(`User created: ${result.insertedId.toString()}`);
     
     res.status(201).json({
       success: true,
@@ -144,7 +206,7 @@ router.post("/", async (req, res) => {
       }
     });
   } catch (error: any) {
-    console.error('Error creating user:', error);
+    logger.error(`Error creating user: ${error.message}`);
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to create user'
@@ -154,21 +216,84 @@ router.post("/", async (req, res) => {
   }
 });
 
-// PUT update user - USES PRISMA ✅
-router.put("/:id", async (req, res) => {
-  const updatedUser = await prisma.user.update({
-    where: { id: req.params.id },
-    data: req.body
-  });
-  res.json(updatedUser);
+// PUT update user 
+router.put("/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Validate request body with Zod 
+    const validationResult = updateUserSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      logger.warn(`Validation failed for user update: ${JSON.stringify(validationResult.error.errors)}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationResult.error.errors.map((err) => ({
+          field: err.path.join('.'),
+          message: err.message
+        }))
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: validationResult.data
+    });
+    
+    logger.info(`User updated: ${id}`);
+    
+    res.json({
+      success: true,
+      data: updatedUser
+    });
+  } catch (error: any) {
+    logger.error(`Error updating user: ${error.message}`);
+    
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user'
+    });
+  }
 });
 
-// DELETE user - USES PRISMA ✅
-router.delete("/:id", async (req, res) => {
-  await prisma.user.delete({
-    where: { id: req.params.id }
-  });
-  res.json({ message: "User deleted" });
+// DELETE user
+router.delete("/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.user.delete({
+      where: { id }
+    });
+    
+    logger.info(`User deleted: ${id}`);
+    
+    res.json({ 
+      success: true,
+      message: "User deleted" 
+    });
+  } catch (error: any) {
+    logger.error(`Error deleting user: ${error.message}`);
+    
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete user'
+    });
+  }
 });
 
 export default router;
