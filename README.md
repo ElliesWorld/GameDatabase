@@ -235,3 +235,15 @@ npm run dev      # Start Vite development server
 cd winston-logger
 npm run seed
 ```
+
+<img width="726" height="463" alt="image" src="https://github.com/user-attachments/assets/f38cf4ba-25b1-4589-bca4-1932690d0943" />
+
+<img width="539" height="621" alt="image" src="https://github.com/user-attachments/assets/89d3df00-aa24-44ca-be2c-5eb9cdea2344" />
+
+<img width="994" height="681" alt="image" src="https://github.com/user-attachments/assets/220feb85-a6b7-411d-8b2c-d86330d815b5" />
+
+<img width="545" height="620" alt="image" src="https://github.com/user-attachments/assets/5d3127d4-25d7-43bf-8e2a-6b34f0048aaa" />
+
+<img width="1281" height="688" alt="image" src="https://github.com/user-attachments/assets/1e1718ed-d694-4e7c-b7cc-5a0cdf312704" />
+
+
